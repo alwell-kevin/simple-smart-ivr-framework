@@ -1,0 +1,29 @@
+{
+  "name": "dreamforce-ivr-ai-demo",
+  "version": "1.0.0",
+  "description": "Awesome Voice based IVR using google AI for NLP",
+  "main": "action.js",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "dotenv": "^6.0.0",
+    "express": "^4.16.3",
+    "nexmo": "^2.3.2",
+    "request": "^2.88.0",
+    "uuid": "^3.3.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alwell-kevin/dreamforce-ivr-ai-demo.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alwell-kevin/dreamforce-ivr-ai-demo/issues"
+  },
+  "homepage": "https://github.com/alwell-kevin/dreamforce-ivr-ai-demo#readme"
+}

@@ -1,2 +1,2 @@
-# simple-smart-ivr-framework
-Very simple framework for creating a dynamic AI voice IVR
+# dreamforce-ivr-ai-demo
+Very simple framework for creating a dyanmic voice ivr
