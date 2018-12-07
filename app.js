@@ -56,16 +56,16 @@ app.use(bodyParser.urlencoded({
 app.get("/answer", (req, res) => {
     USER = req.query.from;
     CONVERSATION_UUID = req.query.uuid;
-    
+
     //Dip into CRM here based on USER;
 
     var nexmo_ncco = {
-        "action": "connect",
-        "timeout": "0",
-        "from": process.env.NEXMO_NUMBER,
-        "endpoint": [{
-            "type": "phone",
-            "number": process.env.DIALOGFLOW_NUMBER
+        action: "connect",
+        timeout: "0",
+        from: process.env.NEXMO_NUMBER,
+        endpoint: [{
+            type: "phone",
+            number: process.env.DIALOGFLOW_NUMBER
         }]
     }
 
@@ -86,7 +86,7 @@ app.post("/event", (req, res) => {
 //   queryResult: 
 //    { queryText: 'I\'m not a customer yet',
 //      action: 'contact-sales-agent',
-//      parameters: {phone:"17326157295"},
+//      parameters: {phone:process.env.SALES_NUMBER},
 //      allRequiredParamsPresent: true,
 //      fulfillmentText: 'Okay, I am going to connect you with a Sales agent. Please wait for a moment while I find someone who is available.',
 //      fulfillmentMessages: [ [Object] ],
@@ -103,9 +103,9 @@ app.all("/google", (req, res) => {
     console.log("************************************")
     console.log("GOOGLE REQ: ", req.body);
 
-    if (req.body.queryResult.action === "order-pizza-yes"){
-        nexmo.message.sendSms(process.env.NEXMO_NUMBER, USER, "Joes Pizza - Thank you for your order of a Large Pizza half Canadian Bacon and half Pineapple. Expected delivery time is 4:45pm.");
-    }else{
+    if (req.body.queryResult.action === "order-pizza-yes") {
+        sendDispatch();
+    } else {
         actions.escalate(req.body.queryResult.action, CONVERSATION_UUID);
     }
     console.log("************************************")
@@ -113,15 +113,27 @@ app.all("/google", (req, res) => {
     res.sendStatus(200)
 })
 
+app.all("/status", (req, res) => {
+    console.log("DISPATCH STATUS: ", req.body);
+
+    res.sendStatus(200)
+})
+
+app.all("/inbound", (req, res) => {
+    console.log("INBOUND MESSAGES: ", req.body);
+
+    res.sendStatus(200)
+})
+
 app.all("/agent-escalation", (req, res) => {
     console.log("IN: customer service contact");
     res.status(200).send([{
-        "action": "connect",
-        "timeout": "10",
-        "from": USER,
-        "endpoint": [{
-            "type": "phone",
-            "number": process.env.SUPPORT_NUMBER
+        action: "connect",
+        timeout: "10",
+        from: USER,
+        endpoint: [{
+            type: "phone",
+            number: process.env.SUPPORT_NUMBER
         }]
     }])
 })
@@ -129,15 +141,62 @@ app.all("/agent-escalation", (req, res) => {
 app.all("/order-status", (req, res) => {
     console.log("IN: order-status")
     res.status(200).send([{
-        "action": "connect",
-        "timeout": "10",
-        "from": USER,
-        "endpoint": [{
-            "type": "phone",
-            "number": process.env.SUPPORT_NUMBER
+        action: "connect",
+        timeout: "10",
+        from: USER,
+        endpoint: [{
+            type: "phone",
+            number: process.env.SUPPORT_NUMBER
         }]
     }])
 })
+
+var sendDispatch = () => {
+    console.log("IN sendDispatch");
+
+    nexmo.dispatch.create(
+        "failover",
+        [{
+                from: {
+                    type: "whatsapp",
+                    number: process.env.NEXMO_NUMBER
+                },
+                to: {
+                    type: "whatsapp",
+                    number: process.env.SALES_NUMBER
+                },
+                message: {
+                    content: {
+                        type: "text",
+                        text: "Joes Pizza - Thank you for your order of a Large Pizza half Canadian Bacon and half Pineapple. Expected delivery time is 4:45pm."
+                    }
+                },
+                failover: {
+                    expiry_time: 600,
+                    condition_status: "delivered"
+                }
+            },
+            {
+                from: {
+                    type: "sms",
+                    number: process.env.NEXMO_NUMBER
+                },
+                to: {
+                    type: "sms",
+                    number: process.env.SALES_NUMBER
+                },
+                message: {
+                    content: {
+                        type: "text",
+                        text: "Joes Pizza - Thank you for your order of a Large Pizza half Canadian Bacon and half Pineapple. Expected delivery time is 4:45pm."
+                    }
+                }
+            },
+            (err, data) => {
+                console.log("IN DISPATCH CALLBACK", data.dispatch_uuid, error);
+            }
+        ])
+}
 
 // Start server
 app.listen(port, () => {
