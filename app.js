@@ -31,23 +31,19 @@ var USER;
 // CONFERENCE_NAME=
 // SALES_NUMBER=
 // SUPPORT_NUMBER=
-// NEXMO_ACCOUNT=
-// NEXMO_PWD=
 // muleURL=
+// Garage Account
 //********************END ENVIRONMENT VARS********************
 
 //********************INTENT LIST********************
-//1. "live agent" 
-//2. Connect me to support
-//3. Connect me to sales
-//4. what is my order status?
-//5 "live agent" 
-//Who is nexmo
-//WHo is vonage
-//WHo is kevin alwell
-//what do you sell?
+//2. Canadian Bacon and pineapple pizza please
+//3. Connect me to an agent
 //********************END LIST********************
 
+
+//********************NOTE********************
+// Ngrok url must be updated to DialogFlow fulfillment URL, Nexmo Voice application
+//********************End Note********************
 
 const port = process.env.PORT || 3000;
 const app = express();
@@ -60,6 +56,8 @@ app.use(bodyParser.urlencoded({
 app.get("/answer", (req, res) => {
     USER = req.query.from;
     CONVERSATION_UUID = req.query.uuid;
+    
+    //Dip into CRM here based on USER;
 
     var nexmo_ncco = {
         "action": "connect",
@@ -97,39 +95,26 @@ app.post("/event", (req, res) => {
 //         displayName: 'contact-sales-agent' },
 //      intentDetectionConfidence: 0.8,
 //      languageCode: 'en-us' },
-//   originalDetectIntentRequest: { source: 'GOOGLE_TELEPHONY', payload: { telephony: [Object] } },
+//   originalDetectIntentRequest: { source: 'GOOGLE_TELEPHONY', payload: { telephony: [{phone:'17326157295'}] } },
 //   session: 'projects/dreamforce-voice-bot-2018/agent/sessions/756t5aSJQzae-pGJowa2lg' }
 
 // CALLED FROM DIALOG FLOW ACTION
 app.all("/google", (req, res) => {
     console.log("************************************")
     console.log("GOOGLE REQ: ", req.body);
+
+    if (req.body.queryResult.action === "order-pizza-yes"){
+        nexmo.message.sendSms(process.env.NEXMO_NUMBER, USER, "Joes Pizza - Thank you for your order of a Large Pizza half Canadian Bacon and half Pineapple. Expected delivery time is 4:45pm.");
+    }else{
+        actions.escalate(req.body.queryResult.action, CONVERSATION_UUID);
+    }
     console.log("************************************")
-
-    //TODO:IDENTIFY DYNAMIC CONVERSATION
-    //originalDetectIntentRequest: { source: 'GOOGLE_TELEPHONY', payload: { telephony: [Object] } }, <-- Need enterprise account to get this object. Otherwise, redacted.
-
-    actions.escalate(req.body.queryResult.action, CONVERSATION_UUID);
 
     res.sendStatus(200)
 })
 
-
-app.all("/contact-sales-agent", (req, res) => {
-    console.log("IN: contact-sales-agent")
-    res.status(200).send([{
-        "action": "connect",
-        "timeout": "10",
-        "from": USER,
-        "endpoint": [{
-            "type": "phone",
-            "number": process.env.SALES_NUMBER
-        }]
-    }])
-})
-
-app.all("/contact-customer-service", (req, res) => {
-    console.log("IN: customer service contact")
+app.all("/agent-escalation", (req, res) => {
+    console.log("IN: customer service contact");
     res.status(200).send([{
         "action": "connect",
         "timeout": "10",
